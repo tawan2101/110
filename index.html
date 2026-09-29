@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🚀 นักบินอวกาศพิทักษ์จักรวาล (Space Guardian)</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --primary: #4f46e5;
+            --primary-glow: #818cf8;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --text-light: #f3f4f6;
+            --card-bg: rgba(17, 24, 39, 0.92);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', 'Kanit', 'Sarabun', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            max-width: 800px;
+            height: 100vh;
+            max-height: 900px;
+            display: flex;
+            flex-direction: column;
+            background: #030712;
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #canvas-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 20;
+            overflow-y: auto;
+            transition: opacity 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hud-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .hud-btn:active {
+            transform: scale(0.92);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #fbbf24;
+            text-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #60a5fa;
+        }
+
+        p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #d1d5db;
+            margin-bottom: 12px;
+        }
+
+        .guide-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            max-width: 480px;
+            margin: 10px 0 18px 0;
+            text-align: left;
+        }
+
+        .guide-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .guide-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #touch-controls {
+            display: none;
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            width: 180px;
+            height: 180px;
+        }
+
+        .dpad-btn {
+            position: absolute;
+            width: 54px;
+            height: 54px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            color: white;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            touch-action: none;
+        }
+
+        .dpad-btn:active, .dpad-btn.active {
+            background: rgba(79, 70, 229, 0.7);
+            border-color: #818cf8;
+        }
+
+        #btn-up { top: 0; left: 63px; }
+        #btn-down { bottom: 0; left: 63px; }
+        #btn-left { top: 63px; left: 0; }
+        #btn-right { top: 63px; right: 0; }
+
+        .btn-main {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: all 0.2s;
+            margin: 6px;
+        }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+        }
+
+        .quiz-container {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid #3b82f6;
+            border-radius: 12px;
+            padding: 14px;
+            margin: 12px 0;
+            width: 100%;
+            max-width: 500px;
+            text-align: left;
+        }
+
+        .quiz-opt {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            margin: 6px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .quiz-opt:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .quiz-opt.correct {
+            background: rgba(16, 185, 129, 0.4) !important;
+            border-color: #10b981;
+        }
+
+        .quiz-opt.wrong {
+            background: rgba(239, 68, 68, 0.4) !important;
+            border-color: #ef4444;
+        }
+
+        @media (max-width: 600px) {
+            #touch-controls { display: block; }
+            h1 { font-size: 1.4rem; }
+            h2 { font-size: 1.1rem; }
+            .guide-box { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD Bar -->
+        <div id="hud">
+            <div class="hud-item">⭐ <span id="score-display">0</span></div>
+            <div class="hud-item"><span id="hp-display">❤️❤️❤️</span></div>
+            <div class="hud-item">📈 ด่าน <span id="level-display">1</span></div>
+            <div class="hud-item">
+                <button class="hud-btn" id="audio-toggle-btn">🔊</button>
+                <button class="hud-btn" id="pause-btn">⏸️</button>
+            </div>
+        </div>
+
+        <!-- Start Overlay -->
+        <div id="start-overlay" class="overlay">
+            <h1>🚀 นักบินอวกาศพิทักษ์จักรวาล</h1>
+            <p>วิชาวิทยาการคำนวณ ชั้นประถมศึกษาปีที่ 5</p>
+            
+            <div class="guide-box">
+                <p style="text-align:center; font-weight:bold; color:#a7f3d0;">🎯 คู่มือภารกิจ & สิ่งต้องเก็บ/หลบ</p>
+                <div class="guide-grid">
+                    <div class="guide-item">💎 คริสตัลฟ้า = +10 คะแนน</div>
+                    <div class="guide-item">🔷 คริสตัลหายาก = +25 คะแนน</div>
+                    <div class="guide-item">⭐ ดาวพลังงาน = +30 คะแนน</div>
+                    <div class="guide-item">☄️ ดาวเคราะห์น้อย = -1 ❤️</div>
+                    <div class="guide-item">🔥 อุกกาบาต = -1 ❤️</div>
+                    <div class="guide-item">🕹️ ปุ่มลูกศร / D-Pad บังคับทิศทาง</div>
+                </div>
+            </div>
+
+            <button class="btn-main" id="start-btn">🚀 เริ่มภารกิจ!</button>
+        </div>
+
+        <!-- Pause Overlay -->
+        <div id="pause-overlay" class="overlay hidden">
+            <h2>⏸️ หยุดภารกิจชั่วคราว</h2>
+            <p>พักสายตาก่อน แล้วกลับมาลุยต่อ!</p>
+            <button class="btn-main" id="resume-btn">▶️ เล่นต่อ</button>
+            <button class="btn-main" id="restart-from-pause-btn" style="background:#ef4444;">🔄 เริ่มใหม่</button>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div id="gameover-overlay" class="overlay hidden">
+            <h1 style="color:#ef4444;">💥 GAME OVER 💥</h1>
+            <p>ภารกิจพิทักษ์จักรวาลสิ้นสุดลงแล้ว</p>
+            
+            <div style="margin: 10px 0; font-size: 1.1rem;">
+                คะแนนรวม: <strong id="final-score" style="color:#f59e0b;">0</strong> คะแนน | 
+                ระดับสูงสุด: <strong id="final-level" style="color:#60a5fa;">1</strong>
+            </div>
+
+            <!-- CS Concept Summary -->
+            <div class="guide-box" style="border-color: #818cf8;">
+                <p style="font-weight:bold; color:#818cf8; margin-bottom: 4px;">🧠 ทบทวนความรู้วิทยาการคำนวณ (CS)</p>
+                <p style="font-size:0.8rem; margin:0;">
+                    ในเกมนี้คุณได้เรียนรู้: <b>ตัวแปร</b> (เก็บคะแนน/ชีวิต), <b>เงื่อนไข</b> (ตรวจสอบการชน/จบเกม), <b>การทำซ้ำ</b> (ลูปวาดเกม), และ <b>การตรวจจับการชน</b> (Collision Detection)
+                </p>
+            </div>
+
+            <!-- Quiz Component -->
+            <div class="quiz-container">
+                <p id="quiz-question" style="font-weight:bold; color:#f3f4f6; margin-bottom:8px;">คำถามสุ่ม...</p>
+                <div id="quiz-options"></div>
+                <p id="quiz-feedback" style="font-weight:bold; margin-top:8px; display:none;"></p>
+            </div>
+
+            <button class="btn-main" id="restart-btn">🔄 เล่นอีกครั้ง</button>
+        </div>
+
+        <!-- Mobile Touch D-Pad -->
+        <div id="touch-controls">
+            <div class="dpad-btn" id="btn-up">⬆️</div>
+            <div class="dpad-btn" id="btn-down">⬇️</div>
+            <div class="dpad-btn" id="btn-left">⬅️</div>
+            <div class="dpad-btn" id="btn-right">➡️</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Audio Synthesizer Class using Web Audio API
+class AudioController {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+    }
+
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.2) {
+        if (this.muted || !this.ctx) return;
+        try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+    }
+
+    playCollectSound(type) {
+        if (this.muted || !this.ctx) return;
+        this.init();
+        if (type === 'blue') {
+            this.playTone(523.25, 'triangle', 0.12, 0.2); // C5
+            setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.2), 60); // E5
+        } else if (type === 'rare') {
+            this.playTone(659.25, 'square', 0.1, 0.15); // E5
+            setTimeout(() => this.playTone(783.99, 'square', 0.1, 0.15), 60); // G5
+            setTimeout(() => this.playTone(1046.50, 'square', 0.15, 0.15), 120); // C6
+        } else if (type === 'star') {
+            this.playTone(880, 'sine', 0.1, 0.25); // A5
+            setTimeout(() => this.playTone(1174.66, 'sine', 0.1, 0.25), 50); // D6
+            setTimeout(() => this.playTone(1396.91, 'sine', 0.2, 0.25), 100); // F6
+        }
+    }
+
+    playHitSound() {
+        if (this.muted || !this.ctx) return;
+        this.init();
+        this.playTone(150, 'sawtooth', 0.25, 0.3);
+        setTimeout(() => this.playTone(90, 'sawtooth', 0.2, 0.3), 80);
+    }
+
+    playLevelUpSound() {
+        if (this.muted || !this.ctx) return;
+        this.init();
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((freq, i) => {
+            setTimeout(() => this.playTone(freq, 'triangle', 0.2, 0.25), i * 90);
+        });
+    }
+
+    playClickSound() {
+        this.playTone(400, 'sine', 0.05, 0.1);
+    }
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const audio = new AudioController();
+
+// Game State Enum
+const GameState = {
+    START: 'START',
+    PLAYING: 'PLAYING',
+    PAUSED: 'PAUSED',
+    GAMEOVER: 'GAMEOVER'
+};
+
+let currentState = GameState.START;
+let score = 0;
+let hp = 3;
+let level = 1;
+let lastTime = 0;
+let levelUpBannerTimer = 0;
+
+const csQuizPool = [
+    {
+        q: "คำสั่งตรวจสอบ 'ถ้า (พลังชีวิต <= 0) แล้วให้ จบเกม' ตรงกับแนวคิดใดในวิชาวิทยาการคำนวณ?",
+        options: ["การทำซ้ำ (Loop)", "การตัดสินใจตามเงื่อนไข (Condition)", "การสร้างตัวแปร (Variable)"],
+        answer: 1,
+        explain: "ถูกต้อง! การใช้คำสั่ง 'ถ้า...แล้ว...' (If-Else) คือการตัดสินใจตามเงื่อนไข"
+    },
+    {
+        q: "ตัวแปร (Variable) ชื่อ 'score' ในเกมนี้ทำหน้าที่อะไร?",
+        options: ["เก็บบันทึกคะแนนของผู้เล่นที่เปลี่ยนแปลงได้", "วาดภาพดาวตกบนหน้าจอ", "เพิ่มความเร็วในการเคลื่อนที่"],
+        answer: 0,
+        explain: "ถูกต้อง! ตัวแปรคือช่องสำหรับเก็บข้อมูลที่สามารถเปลี่ยนแปลงค่าได้ตลอดเวลา"
+    },
+    {
+        q: "การสั่งให้เกมวาดภาพวัตถุใหม่ซ้ำ ๆ หลายสิบครั้งต่อวินาที จัดอยู่ในแนวคิดใด?",
+        options: ["การแยกส่วนประกอบ (Decomposition)", "การจัดลำดับ (Sequence)", "การทำซ้ำ (Loop)"],
+        answer: 2,
+        explain: "ถูกต้อง! การทำงานซ้ำวนไปเรื่อยๆ เพื่ออัปเดตหน้าจอเรียกว่า การทำซ้ำ (Loop)"
+    },
+    {
+        q: "การแบ่งเกมออกเป็นระบบย่อย ๆ เช่น ระบบควบคุม, ระบบวาดกราฟิก, และระบบตรวจจับการชน คือแนวคิดใด?",
+        options: ["การแยกส่วนประกอบ (Decomposition)", "การหารลำดับ (Sorting)", "การระบุเงื่อนไข (Condition)"],
+        answer: 0,
+        explain: "ถูกต้อง! Decomposition คือการย่อยปัญหาหรือระบบใหญ่ให้เป็นส่วนย่อยที่จัดการง่ายขึ้น"
+    },
+    {
+        q: "การคำนวณหาจุดตัดกันระหว่างยานอวกาศกับคริสตัลเรียกว่าอะไร?",
+        options: ["Debugging (การหาข้อผิดพลาด)", "Collision Detection (การตรวจจับการชน)", "Encoding (การเข้ารหัส)"],
+        answer: 1,
+        explain: "ถูกต้อง! Collision Detection คือการตรวจสอบว่าวัตถุสองชิ้นสัมผัสหรือชนกันหรือไม่"
+    }
+];
+
+let currentQuiz = null;
+
+const player = {
+    x: 0,
+    y: 0,
+    width: 44,
+    height: 52,
+    speed: 360,
+    vx: 0,
+    vy: 0,
+    isShielded: false
+};
+
+// Input state tracker
+const keys = {
+    Up: false,
+    Down: false,
+    Left: false,
+    Right: false
+};
+
+// Dynamic entities container
+let stars = [];
+let fallingObjects = [];
+let particles = [];
+let floatingTexts = [];
+
+function resizeCanvas() {
+    const wrapper = document.getElementById('canvas-wrapper');
+    canvas.width = wrapper.clientWidth;
+    canvas.height = wrapper.clientHeight;
+    
+    if (currentState === GameState.START) {
+        player.x = canvas.width / 2 - player.width / 2;
+        player.y = canvas.height - player.height - 40;
+    }
+}
+window.addEventListener('resize', resizeCanvas);
+
+function initStarfield() {
+    stars = [];
+    const count = Math.floor((canvas.width * canvas.height) / 3000);
+    for (let i = 0; i < count; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2 + 1,
+            speed: Math.random() * 40 + 20,
+            alpha: Math.random()
+        });
+    }
+}
+
+function createExplosion(x, y, color, count = 12) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 120 + 30;
+        particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: Math.random() * 3 + 2,
+            color: color,
+            alpha: 1,
+            life: Math.random() * 0.4 + 0.3
+        });
+    }
+}
+
+function createFloatingText(x, y, text, color) {
+    floatingTexts.push({
+        x: x,
+        y: y,
+        text: text,
+        color: color,
+        alpha: 1,
+        vy: -50
+    });
+}
+
+let spawnTimer = 0;
+function spawnObjects(dt) {
+    spawnTimer += dt;
+    
+    // Spawn rate increases with higher levels
+    const spawnInterval = Math.max(0.4, 1.3 - (level - 1) * 0.18);
+    
+    if (spawnTimer >= spawnInterval) {
+        spawnTimer = 0;
+        
+        const rand = Math.random();
+        let type = 'blue';
+        
+        // Probability distribution depends on level
+        if (rand < 0.35) {
+            type = 'blue'; // +10
+        } else if (rand < 0.50) {
+            type = 'rare'; // +25
+        } else if (rand < 0.60) {
+            type = 'star'; // +30
+        } else if (rand < 0.82) {
+            type = 'asteroid'; // -1 HP
+        } else {
+            type = 'meteor'; // -1 HP
+        }
+
+        const size = (type === 'meteor' || type === 'asteroid') ? 42 : 32;
+        const speedMultiplier = 1 + (level - 1) * 0.22;
+        const baseSpeed = (Math.random() * 60 + 100) * speedMultiplier;
+        
+        // Horizontal wobble trajectory for higher levels
+        const vx = (level >= 4 && Math.random() < 0.4) ? (Math.random() - 0.5) * 80 : 0;
+
+        fallingObjects.push({
+            x: Math.random() * (canvas.width - size),
+            y: -size,
+            size: size,
+            type: type,
+            speed: baseSpeed,
+            vx: vx,
+            rotation: 0,
+            rotSpeed: (Math.random() - 0.5) * 3
+        });
+    }
+}
+
+function update(dt) {
+    if (currentState !== GameState.PLAYING) return;
+
+    // 1. Move Player
+    player.vx = 0;
+    player.vy = 0;
+
+    if (keys.Left) player.vx = -player.speed;
+    if (keys.Right) player.vx = player.speed;
+    if (keys.Up) player.vy = -player.speed;
+    if (keys.Down) player.vy = player.speed;
+
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    // Keep player inside canvas boundary
+    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+
+    // 2. Starfield update
+    stars.forEach(star => {
+        star.y += star.speed * dt;
+        if (star.y > canvas.height) {
+            star.y = 0;
+            star.x = Math.random() * canvas.width;
+        }
+    });
+
+    // 3. Level Up Banner timer
+    if (levelUpBannerTimer > 0) {
+        levelUpBannerTimer -= dt;
+    }
+
+    // 4. Update Spawning and Falling Objects
+    spawnObjects(dt);
+
+    for (let i = fallingObjects.length - 1; i >= 0; i--) {
+        const obj = fallingObjects[i];
+        obj.y += obj.speed * dt;
+        obj.x += obj.vx * dt;
+        obj.rotation += obj.rotSpeed * dt;
+
+        // Bounce horizontally if hitting edges
+        if (obj.x <= 0 || obj.x + obj.size >= canvas.width) {
+            obj.vx = -obj.vx;
+        }
+
+        // Precise Collision Detection
+        if (
+            player.x < obj.x + obj.size &&
+            player.x + player.width > obj.x &&
+            player.y < obj.y + obj.size &&
+            player.y + player.height > obj.y
+        ) {
+            handleCollision(obj);
+            fallingObjects.splice(i, 1);
+            continue;
+        }
+
+        // Clean up offscreen objects
+        if (obj.y > canvas.height + 50) {
+            fallingObjects.splice(i, 1);
+        }
+    }
+
+    // 5. Update Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.alpha -= dt / p.life;
+        if (p.alpha <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+
+    // 6. Update Floating Score Text
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= dt * 1.2;
+        if (ft.alpha <= 0) {
+            floatingTexts.splice(i, 1);
+        }
+    }
+}
+
+function handleCollision(obj) {
+    const cx = obj.x + obj.size / 2;
+    const cy = obj.y + obj.size / 2;
+
+    if (obj.type === 'blue') {
+        score += 10;
+        audio.playCollectSound('blue');
+        createExplosion(cx, cy, '#38bdf8', 10);
+        createFloatingText(cx, cy, '+10', '#38bdf8');
+    } else if (obj.type === 'rare') {
+        score += 25;
+        audio.playCollectSound('rare');
+        createExplosion(cx, cy, '#818cf8', 14);
+        createFloatingText(cx, cy, '+25', '#818cf8');
+    } else if (obj.type === 'star') {
+        score += 30;
+        audio.playCollectSound('star');
+        createExplosion(cx, cy, '#fbbf24', 18);
+        createFloatingText(cx, cy, '+30', '#fbbf24');
+    } else if (obj.type === 'asteroid' || obj.type === 'meteor') {
+        hp -= 1;
+        audio.playHitSound();
+        createExplosion(cx, cy, '#ef4444', 20);
+        createFloatingText(cx, cy, '-1 ❤️', '#ef4444');
+
+        if (hp <= 0) {
+            hp = 0;
+            triggerGameOver();
+        }
+    }
+
+    // Level progression check (Every 100 points)
+    const newLevel = Math.min(5, Math.floor(score / 100) + 1);
+    if (newLevel > level) {
+        level = newLevel;
+        levelUpBannerTimer = 2.0; // Show Level Up banner for 2s
+        audio.playLevelUpSound();
+        createExplosion(canvas.width / 2, canvas.height / 3, '#a7f3d0', 30);
+    }
+
+    updateHUD();
+}
+
+function updateHUD() {
+    document.getElementById('score-display').textContent = score;
+    document.getElementById('level-display').textContent = level;
+    
+    let heartsStr = '';
+    for (let i = 0; i < hp; i++) heartsStr += '❤️';
+    document.getElementById('hp-display').textContent = heartsStr || '💔';
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Draw Starfield
+    stars.forEach(star => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // 2. Draw Falling Objects
+    fallingObjects.forEach(obj => {
+        ctx.save();
+        ctx.translate(obj.x + obj.size / 2, obj.y + obj.size / 2);
+        ctx.rotate(obj.rotation);
+
+        if (obj.type === 'blue') {
+            // Cyan Crystal
+            ctx.fillStyle = '#38bdf8';
+            ctx.shadowColor = '#0284c7';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(0, -obj.size / 2);
+            ctx.lineTo(obj.size / 2, 0);
+            ctx.lineTo(0, obj.size / 2);
+            ctx.lineTo(-obj.size / 2, 0);
+            ctx.closePath();
+            ctx.fill();
+        } else if (obj.type === 'rare') {
+            // Dark Blue Rare Crystal
+            ctx.fillStyle = '#6366f1';
+            ctx.shadowColor = '#4338ca';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(0, -obj.size / 2);
+            ctx.lineTo(obj.size / 2, -obj.size / 4);
+            ctx.lineTo(obj.size / 2, obj.size / 4);
+            ctx.lineTo(0, obj.size / 2);
+            ctx.lineTo(-obj.size / 2, obj.size / 4);
+            ctx.lineTo(-obj.size / 2, -obj.size / 4);
+            ctx.closePath();
+            ctx.fill();
+        } else if (obj.type === 'star') {
+            // Golden Star
+            ctx.fillStyle = '#f59e0b';
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 14;
+            drawStarShape(ctx, 0, 0, 5, obj.size / 2, obj.size / 4);
+        } else if (obj.type === 'asteroid') {
+            // Asteroid
+            ctx.fillStyle = '#78716c';
+            ctx.strokeStyle = '#44403c';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Craters
+            ctx.fillStyle = '#57534e';
+            ctx.beginPath();
+            ctx.arc(-obj.size / 5, -obj.size / 5, obj.size / 6, 0, Math.PI * 2);
+            ctx.arc(obj.size / 4, obj.size / 6, obj.size / 8, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (obj.type === 'meteor') {
+            // Fire Meteor
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowColor = '#f97316';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            // Flame Core
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(-2, -2, obj.size / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    });
+
+    // Helper to draw 5-point star
+    function drawStarShape(c, cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        let step = Math.PI / spikes;
+
+        c.beginPath();
+        c.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            c.lineTo(x, y);
+            rot += step;
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            c.lineTo(x, y);
+            rot += step;
+        }
+        c.lineTo(cx, cy - outerRadius);
+        c.closePath();
+        c.fill();
+    }
+
+    // 3. Draw Player Rocket
+    if (currentState === GameState.PLAYING || currentState === GameState.PAUSED) {
+        ctx.save();
+        ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+
+        // Animated Thruster Flame
+        const flameHeight = Math.random() * 12 + 10;
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(-player.width / 4, player.height / 2);
+        ctx.lineTo(0, player.height / 2 + flameHeight);
+        ctx.lineTo(player.width / 4, player.height / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.moveTo(-player.width / 6, player.height / 2);
+        ctx.lineTo(0, player.height / 2 + flameHeight * 0.6);
+        ctx.lineTo(player.width / 6, player.height / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rocket Main Body
+        ctx.fillStyle = '#f3f4f6';
+        ctx.beginPath();
+        ctx.moveTo(0, -player.height / 2);
+        ctx.quadraticCurveTo(player.width / 2, -player.height / 6, player.width / 2, player.height / 2);
+        ctx.lineTo(-player.width / 2, player.height / 2);
+        ctx.quadraticCurveTo(-player.width / 2, -player.height / 6, 0, -player.height / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rocket Wings
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(-player.width / 2, player.height / 6);
+        ctx.lineTo(-player.width * 0.75, player.height / 2);
+        ctx.lineTo(-player.width / 2, player.height / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(player.width / 2, player.height / 6);
+        ctx.lineTo(player.width * 0.75, player.height / 2);
+        ctx.lineTo(player.width / 2, player.height / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cockpit Window
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(0, -player.height / 8, player.width / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // 4. Draw Particles
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
+
+    // 5. Draw Floating Texts
+    floatingTexts.forEach(ft => {
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = 'bold 20px Prompt, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.globalAlpha = 1;
+    });
+
+    // 6. Draw Level Up Banner Overlay
+    if (levelUpBannerTimer > 0) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(79, 70, 229, 0.85)';
+        ctx.fillRect(0, canvas.height / 2 - 45, canvas.width, 90);
+        
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 32px Prompt, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 8;
+        ctx.fillText(`✨ LEVEL UP! ด่าน ${level} ✨`, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+    }
+}
+
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1); // Cap delta time
+    lastTime = timestamp;
+
+    update(dt);
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Keyboard Controls
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.Left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.Right = true;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.Up = true;
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.Down = true;
+    
+    if (e.key === 'p' || e.key === 'P') {
+        togglePause();
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.Left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.Right = false;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.Up = false;
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.Down = false;
+});
+
+// Mobile On-Screen D-Pad Controls
+function bindTouchButton(btnId, keyProp) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+
+    const startHandler = (e) => {
+        e.preventDefault();
+        keys[keyProp] = true;
+        btn.classList.add('active');
+        audio.init();
+    };
+
+    const endHandler = (e) => {
+        e.preventDefault();
+        keys[keyProp] = false;
+        btn.classList.remove('active');
+    };
+
+    btn.addEventListener('touchstart', startHandler);
+    btn.addEventListener('touchend', endHandler);
+    btn.addEventListener('touchcancel', endHandler);
+    btn.addEventListener('mousedown', startHandler);
+    btn.addEventListener('mouseup', endHandler);
+    btn.addEventListener('mouseleave', endHandler);
+}
+
+bindTouchButton('btn-up', 'Up');
+bindTouchButton('btn-down', 'Down');
+bindTouchButton('btn-left', 'Left');
+bindTouchButton('btn-right', 'Right');
+
+function startGame() {
+    audio.init();
+    audio.playClickSound();
+    
+    score = 0;
+    hp = 3;
+    level = 1;
+    fallingObjects = [];
+    particles = [];
+    floatingTexts = [];
+    
+    player.x = canvas.width / 2 - player.width / 2;
+    player.y = canvas.height - player.height - 40;
+
+    updateHUD();
+
+    document.getElementById('start-overlay').classList.add('hidden');
+    document.getElementById('pause-overlay').classList.add('hidden');
+    document.getElementById('gameover-overlay').classList.add('hidden');
+
+    currentState = GameState.PLAYING;
+}
+
+function togglePause() {
+    if (currentState === GameState.PLAYING) {
+        currentState = GameState.PAUSED;
+        document.getElementById('pause-overlay').classList.remove('hidden');
+    } else if (currentState === GameState.PAUSED) {
+        currentState = GameState.PLAYING;
+        document.getElementById('pause-overlay').classList.add('hidden');
+    }
+}
+
+function triggerGameOver() {
+    currentState = GameState.GAMEOVER;
+    
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('final-level').textContent = level;
+
+    // Load random CS Quiz
+    loadQuiz();
+
+    document.getElementById('gameover-overlay').classList.remove('hidden');
+}
+
+function loadQuiz() {
+    const randomIndex = Math.floor(Math.random() * csQuizPool.length);
+    currentQuiz = csQuizPool[randomIndex];
+
+    const qElem = document.getElementById('quiz-question');
+    const optsElem = document.getElementById('quiz-options');
+    const feedbackElem = document.getElementById('quiz-feedback');
+
+    qElem.textContent = "❓ " + currentQuiz.q;
+    optsElem.innerHTML = '';
+    feedbackElem.style.display = 'none';
+
+    currentQuiz.options.forEach((optText, index) => {
+        const optDiv = document.createElement('div');
+        optDiv.className = 'quiz-opt';
+        optDiv.textContent = `${index + 1}) ${optText}`;
+        optDiv.onclick = () => checkQuizAnswer(index, optDiv);
+        optsElem.appendChild(optDiv);
+    });
+}
+
+function checkQuizAnswer(selectedIndex, selectedElem) {
+    const feedbackElem = document.getElementById('quiz-feedback');
+    const allOpts = document.querySelectorAll('.quiz-opt');
+
+    // Disable all options after selection
+    allOpts.forEach(opt => opt.onclick = null);
+
+    if (selectedIndex === currentQuiz.answer) {
+        selectedElem.classList.add('correct');
+        feedbackElem.style.color = '#10b981';
+        feedbackElem.textContent = "🎉 " + currentQuiz.explain;
+        audio.playCollectSound('star');
+    } else {
+        selectedElem.classList.add('wrong');
+        allOpts[currentQuiz.answer].classList.add('correct');
+        feedbackElem.style.color = '#ef4444';
+        feedbackElem.textContent = "❌ ยังไม่ถูกต้อง! คำตอบที่ถูกต้องคือตัวเลือกที่ " + (currentQuiz.answer + 1);
+        audio.playHitSound();
+    }
+
+    feedbackElem.style.display = 'block';
+}
+
+document.getElementById('start-btn').onclick = startGame;
+document.getElementById('resume-btn').onclick = () => { audio.playClickSound(); togglePause(); };
+document.getElementById('pause-btn').onclick = () => { audio.playClickSound(); togglePause(); };
+document.getElementById('restart-btn').onclick = startGame;
+document.getElementById('restart-from-pause-btn').onclick = startGame;
+
+document.getElementById('audio-toggle-btn').onclick = () => {
+    audio.muted = !audio.muted;
+    document.getElementById('audio-toggle-btn').textContent = audio.muted ? '🔇' : '🔊';
+};
+
+window.onload = () => {
+    resizeCanvas();
+    initStarfield();
+    requestAnimationFrame(gameLoop);
+};
+</script>
+</body>
+</html>
